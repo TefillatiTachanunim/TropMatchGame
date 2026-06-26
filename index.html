@@ -246,6 +246,7 @@ let selectedRight = null;
 
 let matches = new Map();
 
+let roundComplete = false;
 
 
 function shuffle(arr) {
@@ -269,7 +270,7 @@ function newRound() {
 
 
     matches.clear();
-
+    roundComplete = false;
 
 
     render();
@@ -452,12 +453,11 @@ function tryMatch() {
 
 
 
-    if (matches.size === leftItems.length) {
-
+    if (!roundComplete && matches.size === leftItems.length) {
+        roundComplete = true;
         setTimeout(newRound, 3000);
-
     }
-
+    
 }
 
 
