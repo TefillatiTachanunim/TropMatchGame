@@ -64,19 +64,26 @@
         background: white;
         padding: 14px;
         border-radius: 10px;
-        text-align: center;
         font-size: 22px;
         cursor: pointer;
         user-select: none;
         transition: 0.2s;
     
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        /* ❌ remove flex entirely (this is the key fix) */
+        display: block;
     
+        /* ✅ proper Hebrew rendering */
         direction: rtl;
-        unicode-bidi: isolate;
-        font-family: "SBL Hebrew", "David", serif;
+        unicode-bidi: isolate-override;
+    
+        /* ✅ true centering for inline Hebrew glyph stack */
+        text-align: center;
+    
+        /* ✅ helps combining marks position correctly */
+        font-family: "SBL Hebrew", "David", "Times New Roman", serif;
+    
+        /* ✅ critical for trope marks vertical placement */
+        line-height: 2.2;
     }
 
     .item.selected {
