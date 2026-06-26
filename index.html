@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Trop Trainer</title>
+
+
+
+<style>
+
+    body {
+
+        font-family: system-ui, -apple-system, sans-serif;
+
+        margin: 0;
+
+        background: #f6f6f6;
+
+        display: flex;
+
+        justify-content: center;
+
+    }
+
+
+
+    .container {
+
+        display: flex;
+
+        width: 100%;
+
+        max-width: 1000px;
+
+        padding: 20px;
+
+        gap: 40px;
+
+    }
+
+
+
+    .column {
+
+        flex: 1;
+
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 10px;
+
+    }
+
+
+
+    .item {
+
+        background: white;
+
+        padding: 14px;
+
+        border-radius: 10px;
+
+        text-align: center;
+
+        font-size: 20px;
+
+        cursor: pointer;
+
+        user-select: none;
+
+        transition: 0.2s;
+
+    }
+
+
+
+    .item.selected {
+
+        background: #cfe8ff;
+
+    }
+
+
+
+    .item.matched {
+
+        background: #c8f7c5;
+
+        cursor: default;
+
+    }
+
+
+
+    .shake {
+
+        animation: shake 0.25s;
+
+    }
+
+
+
+    @keyframes shake {
+
+        0% { transform: translateX(0); }
+
+        25% { transform: translateX(-5px); }
+
+        50% { transform: translateX(5px); }
+
+        75% { transform: translateX(-5px); }
+
+        100% { transform: translateX(0); }
+
+    }
+
+
+
+    .line-layer {
+
+        position: fixed;
+
+        top: 0;
+
+        left: 0;
+
+        width: 100%;
+
+        height: 100%;
+
+        pointer-events: none;
+
+    }
+
+
+
+    svg {
+
+        width: 100%;
+
+        height: 100%;
+
+    }
+
+
+
+</style>
+
+</head>
+
+
+
+<body>
+
+
+
+<div class="container">
+
+    <div id="left" class="column"></div>
+
+    <div id="right" class="column"></div>
+
+</div>
+
+
+
+<svg class="line-layer" id="lines"></svg>
+
+
+
+<script>
+
+const ALL_PAIRS = [
+
+    ["בֽ", "סוף פסוק"],
+
+    ["ב֑", "אתנחתא"],
+
+    ["ב֒", "סגול"],
+
+    ["ב֓", "שלשלת"],
+
+    ["ב֔", "זקף קטן"],
+
+    ["ב֕", "זקף גדול"],
+
+    ["ב֖", "טפחא"],
+
+    ["ב֗", "רביע"],
+
+    ["ב֮", "זרקא"],
+
+    ["ב֙", "פשׁטא"],
+
+    ["ב֚", "יתיב"],
+
+    ["ב֛", "תביר"],
+
+    ["ב֡", "פזר"],
+
+    ["ב֠", "תלישא גדולה"],
+
+    ["ב֜", "אזלא גרש"],
+
+    ["ב֞", "גרשיים"],
+
+    ["ב֥", "מרכא"],
+
+    ["ב֣", "מונח"],
+
+    ["ב֤", "מהפך"],
+
+    ["ב֧", "דרגא"],
+
+    ["ב֨", "קדמא"],
+
+    ["ב֩", "תלישא קטנה"]
+
+];
+
+
+
+let leftItems = [];
+
+let rightItems = [];
+
+
+
+let selectedLeft = null;
+
+let selectedRight = null;
+
+
+
+let matches = new Map();
+
+
+
+function shuffle(arr) {
+
+    return arr.sort(() => Math.random() - 0.5);
+
+}
+
+
+
+function newRound() {
+
+    let chosen = shuffle([...ALL_PAIRS]).slice(0, 10);
+
+
+
+    leftItems = shuffle(chosen.map(x => x[0]));
+
+    rightItems = shuffle(chosen.map(x => x[1]));
+
+
+
+    matches.clear();
+
+
+
+    render();
+
+}
+
+
+
+function render() {
+
+    const left = document.getElementById("left");
+
+    const right = document.getElementById("right");
+
+
+
+    left.innerHTML = "";
+
+    right.innerHTML = "";
+
+
+
+    leftItems.forEach(symbol => {
+
+        const div = document.createElement("div");
+
+        div.className = "item";
+
+        div.innerText = symbol;
+
+
+
+        if ([...matches.keys()].includes(symbol)) {
+
+            div.classList.add("matched");
+
+        }
+
+
+
+        div.onclick = () => selectLeft(symbol, div);
+
+
+
+        left.appendChild(div);
+
+    });
+
+
+
+    rightItems.forEach(name => {
+
+        const div = document.createElement("div");
+
+        div.className = "item";
+
+        div.innerText = name;
+
+
+
+        if ([...matches.values()].includes(name)) {
+
+            div.classList.add("matched");
+
+        }
+
+
+
+        div.onclick = () => selectRight(name, div);
+
+
+
+        right.appendChild(div);
+
+    });
+
+
+
+    drawLines();
+
+}
+
+
+
+function selectLeft(symbol, el) {
+
+    if (matches.has(symbol)) return;
+
+
+
+    selectedLeft = { symbol, el };
+
+    highlight();
+
+    tryMatch();
+
+}
+
+
+
+function selectRight(name, el) {
+
+    if ([...matches.values()].includes(name)) return;
+
+
+
+    selectedRight = { name, el };
+
+    highlight();
+
+    tryMatch();
+
+}
+
+
+
+function highlight() {
+
+    document.querySelectorAll(".item").forEach(el => {
+
+        el.classList.remove("selected");
+
+    });
+
+
+
+    if (selectedLeft) selectedLeft.el.classList.add("selected");
+
+    if (selectedRight) selectedRight.el.classList.add("selected");
+
+}
+
+
+
+function tryMatch() {
+
+    if (!selectedLeft || !selectedRight) return;
+
+
+
+    const pair = ALL_PAIRS.find(p =>
+
+        p[0] === selectedLeft.symbol && p[1] === selectedRight.name
+
+    );
+
+
+
+    if (pair) {
+
+        matches.set(selectedLeft.symbol, selectedRight.name);
+
+    } else {
+
+        selectedLeft.el.classList.add("shake");
+
+        selectedRight.el.classList.add("shake");
+
+
+
+        setTimeout(() => {
+
+            selectedLeft.el.classList.remove("shake");
+
+            selectedRight.el.classList.remove("shake");
+
+        }, 250);
+
+    }
+
+
+
+    selectedLeft = null;
+
+    selectedRight = null;
+
+
+
+    render();
+
+
+
+    if (matches.size === 10) {
+
+        setTimeout(newRound, 3000);
+
+    }
+
+}
+
+
+
+function drawLines() {
+
+    const svg = document.getElementById("lines");
+
+    svg.innerHTML = "";
+
+
+
+    matches.forEach((name, symbol) => {
+
+        const leftEl = [...document.querySelectorAll(".item")]
+
+            .find(e => e.innerText === symbol);
+
+
+
+        const rightEl = [...document.querySelectorAll(".item")]
+
+            .find(e => e.innerText === name);
+
+
+
+        if (!leftEl || !rightEl) return;
+
+
+
+        const a = leftEl.getBoundingClientRect();
+
+        const b = rightEl.getBoundingClientRect();
+
+
+
+        const x1 = a.right;
+
+        const y1 = a.top + a.height / 2;
+
+
+
+        const x2 = b.left;
+
+        const y2 = b.top + b.height / 2;
+
+
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+
+        line.setAttribute("x1", x1);
+
+        line.setAttribute("y1", y1);
+
+        line.setAttribute("x2", x2);
+
+        line.setAttribute("y2", y2);
+
+        line.setAttribute("stroke", "green");
+
+        line.setAttribute("stroke-width", "3");
+
+
+
+        svg.appendChild(line);
+
+    });
+
+}
+
+
+
+newRound();
+
+</script>
+
+
+
+</body>
+
+</html>
